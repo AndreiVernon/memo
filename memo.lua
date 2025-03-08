@@ -25,7 +25,7 @@ local options = {
     timestamp_format = "%Y-%m-%d %H:%M:%S",
 
     -- Display titles instead of filenames when available
-    use_titles = true,
+    use_titles = "yes",
 
     -- Truncate titles to n characters, 0 to disable
     truncate_titles = 60,
@@ -764,7 +764,10 @@ function path_info(full_path)
         end)
     end
 
-    return display_path, save_path, effective_path, effective_protocol, is_remote, file_options
+	local valid_protocols = {http = true, https = true, ytdl = true}
+	local is_url = effective_protocol and valid_protocols[effective_protocol]
+
+    return display_path, save_path, effective_path, effective_protocol, is_remote, file_options, is_url
 end
 
 function write_history(display)
@@ -938,7 +941,7 @@ function show_history(entries, next_page, prev_page, update, return_items)
         local title_length = title_length_str ~= "" and tonumber(title_length_str) or 0
         local full_path = file_info:sub(title_length + 2)
 
-        local display_path, save_path, effective_path, effective_protocol, is_remote, file_options = path_info(full_path)
+        local display_path, save_path, effective_path, effective_protocol, is_remote, file_options, is_url = path_info(full_path)
         local cache_key = effective_path .. display_path .. (file_options or "")
 
         if options.hide_duplicates and state.known_files[cache_key] then
@@ -1013,9 +1016,9 @@ function show_history(entries, next_page, prev_page, update, return_items)
         end
 
         local title = file_info:sub(1, title_length)
-        if not options.use_titles then
-            title = ""
-        end
+		if options.use_titles == "no" or (options.use_titles == "url" and not is_url) then
+			title = ""
+		end
 
         if dir_menu then
             title = basename
