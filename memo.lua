@@ -54,7 +54,11 @@ local options = {
     --   Opening the file "/data/TV Shows/Comedy/Curb Your Enthusiasm/S4/E06.mkv" will
     --   lead to "Curb Your Enthusiasm" to be shown in the directory menu. Opening
     --   of that entry will then open that file again.
-    path_prefixes = "pattern:.*"
+    path_prefixes = "pattern:.*",
+
+    -- Only show the most-recent entry per archive
+    -- and open the archive itself (no inner-file) when selected.
+    collapse_archive_entries = true
 }
 
 function parse_path_prefixes(path_prefixes)
@@ -939,6 +943,31 @@ function show_history(entries, next_page, prev_page, update, return_items)
         local full_path = file_info:sub(title_length + 2)
 
         local display_path, save_path, effective_path, effective_protocol, is_remote, file_options = path_info(full_path)
+
+        -- detect archive base file from the raw history full_path string
+        local archive_base = nil
+        if full_path and full_path:find("^archive://") then
+            archive_base = full_path:match("^archive://(.+)")
+            if archive_base then
+                archive_base = archive_base:gsub("%%7C", "|")
+                archive_base = archive_base:match("^(.-)|") or archive_base
+            end
+        end
+
+        -- if collapse_archive_entries is enabled and this entry is from an archive:
+        -- 1. existence checks apply to the archive file (not inner file)
+        -- 2. duplicates are collapsed per-archive (not per-inner-file)
+        if options.collapse_archive_entries and archive_base then
+            local ok_normalized = pcall(function()
+                effective_path = normalize(archive_base)
+            end)
+            if not ok_normalized then
+                effective_path = archive_base
+            end
+            save_path = effective_path
+            display_path = archive_base
+        end
+        
         local cache_key = effective_path .. display_path .. (file_options or "")
 
         if options.hide_duplicates and state.known_files[cache_key] then
@@ -1099,6 +1128,13 @@ function show_history(entries, next_page, prev_page, update, return_items)
         state.known_files[cache_key] = true
 
         local command = {"loadfile", full_path, "replace"}
+
+        -- if collapse_archive_entries is enabled, open the archive file itself (no inner path / no archive://)
+        if options.collapse_archive_entries and archive_base then
+            local archive_to_open = archive_base
+            local ok_norm = pcall(function() archive_to_open = normalize(archive_to_open) end)
+            command = {"loadfile", archive_to_open, "replace"}
+        end
 
         if file_options then
             command[2] = display_path
