@@ -58,7 +58,7 @@ local options = {
 
     -- Only show the most-recent entry per archive
     -- and open the archive itself (no inner-file) when selected.
-    collapse_archive_entries = true
+    collapse_archive_entries = false
 }
 
 function parse_path_prefixes(path_prefixes)
