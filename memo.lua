@@ -1046,6 +1046,13 @@ function show_history(entries, next_page, prev_page, update, return_items)
             title = ""
         end
 
+        -- if collapsing archive entries, prefer the archive's filename as the title
+        if options.collapse_archive_entries and archive_base then
+            local _, archive_basename = mp.utils.split_path(archive_base)
+            archive_basename = archive_basename and archive_basename ~= "" and archive_basename or title
+            title = archive_basename
+        end
+
         if dir_menu then
             title = basename
         elseif title == "" then
