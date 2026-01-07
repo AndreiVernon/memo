@@ -1033,7 +1033,11 @@ function show_history(entries, next_page, prev_page, update, return_items)
         end
 
         local title = file_info:sub(1, title_length)
-        if not options.use_titles or options.display_archive_name then
+        if not options.use_titles then
+            title = ""
+        end
+
+        if options.hide_same_archive and options.display_archive_name and effective_protocol == "archive" then
             title = ""
         end
 
