@@ -844,6 +844,7 @@ function show_history(entries, next_page, prev_page, update, return_items)
     local menu_items = {}
     local state = (prev_page or next_page) and last_state or {
         known_dirs = {},
+        known_archives = {},
         known_files = {},
         existing_files = {},
         cursor = history:seek("end"),
@@ -947,8 +948,8 @@ function show_history(entries, next_page, prev_page, update, return_items)
         local display_path, save_path, effective_path, effective_protocol, is_remote, file_options = path_info(full_path)
         local cache_key = effective_path .. display_path .. (file_options or "")
 
-        if options.hide_same_archive and effective_protocol == "archive" then
-            cache_key = effective_path .. (file_options or "")
+        if options.hide_same_archive and options.display_archive_name and effective_protocol == "archive" then
+            display_path = effective_path
         end
 
         if options.hide_duplicates and state.known_files[cache_key] then
@@ -972,26 +973,35 @@ function show_history(entries, next_page, prev_page, update, return_items)
         if is_remote then
             state.existing_files[cache_key] = true
             state.known_files[cache_key] = true
-        elseif options.hide_same_dir or dir_menu then
-            dirname, basename = mp.utils.split_path(display_path)
-            if dir_menu then
-                if dirname == "." then return end
-                local unix_dirname = dirname:gsub("\\", "/")
-                local parent, _ = mp.utils.split_path(unix_dirname:sub(1, -2))
-                local start, stop = find_path_prefix(parent, dir_menu_prefixes)
-                if not start then
+        else
+            if options.hide_same_archive and effective_protocol == "archive" then
+                local archive_key = effective_path .. (file_options or "")
+                if state.known_archives[archive_key] then
                     return
                 end
-                basename = unix_dirname:match("/(.-)/", stop)
-                if basename == nil then return end
-                start, stop = dirname:find(basename, stop, true)
-                dirname = dirname:sub(1, stop + 1)
+                state.known_archives[archive_key] = true
             end
-            if state.known_dirs[dirname] then
-                return
-            end
-            if dirname ~= "." then
-                state.known_dirs[dirname] = true
+            if options.hide_same_dir or dir_menu then
+                dirname, basename = mp.utils.split_path(display_path)
+                if dir_menu then
+                    if dirname == "." then return end
+                    local unix_dirname = dirname:gsub("\\", "/")
+                    local parent, _ = mp.utils.split_path(unix_dirname:sub(1, -2))
+                    local start, stop = find_path_prefix(parent, dir_menu_prefixes)
+                    if not start then
+                        return
+                    end
+                    basename = unix_dirname:match("/(.-)/", stop)
+                    if basename == nil then return end
+                    start, stop = dirname:find(basename, stop, true)
+                    dirname = dirname:sub(1, stop + 1)
+                end
+                if state.known_dirs[dirname] then
+                    return
+                end
+                if dirname ~= "." then
+                    state.known_dirs[dirname] = true
+                end
             end
         end
 
@@ -1023,15 +1033,8 @@ function show_history(entries, next_page, prev_page, update, return_items)
         end
 
         local title = file_info:sub(1, title_length)
-        if not options.use_titles then
+        if not options.use_titles or options.display_archive_name then
             title = ""
-        end
-
-        -- if collapsing archive entries, display the archive's filename
-        if options.hide_same_archive and options.display_archive_name and effective_protocol == "archive" then
-            local _, archive_basename = mp.utils.split_path(effective_path)
-            archive_basename = archive_basename and archive_basename ~= "" and archive_basename or title
-            title = archive_basename
         end
 
         if dir_menu then
