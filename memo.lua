@@ -737,12 +737,10 @@ function path_info(full_path)
             print("archive_path: " .. tostring(archive_path))
             print("filename: " .. tostring(filename))
 
-            display_path, save_path, _, protocol, is_remote, file_options = resolve(main_path, save_path, main_path, protocol, is_remote)
-            effective_path = normalize(display_path)
+            display_path, save_path, effective_path, protocol, is_remote, file_options = resolve(main_path, save_path, main_path, protocol, is_remote)
             save_path = save_path or effective_path
             save_path = "archive://" .. url_encode_archive(save_path) .. archive_path .. filename
-            --grab from effective_path so we show the parent archive instead of a nested archive
-            _, main_path = mp.utils.split_path(effective_path)
+            _, main_path = mp.utils.split_path(main_path)
             _, filename = mp.utils.split_path(filename)
             display_path = main_path .. ": " .. filename
             print("test display: " .. tostring(display_path))
