@@ -1054,6 +1054,9 @@ function show_history(entries, next_page, prev_page, update, return_items)
                 if not dirname then
                     dirname, basename = mp.utils.split_path(effective_display_path)
                 end
+                if effective_protocol == "archive" and not options.display_archive_name then
+                    basename = effective_display_path
+                end
                 title = basename ~= "" and basename or display_path
                 if file_options then
                     title = display_path .. " " .. title
