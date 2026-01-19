@@ -743,41 +743,26 @@ function path_info(full_path)
         display_path = display_path:sub(protocol_end + 1)
 
         if protocol == "archive" then
-            print(display_path)
             local main_path, archive_path, filename = display_path:match("(.-)(|.-[\\/])(.+)")
             if not main_path then
-                print("REGEX FAIL")
                 local main_path = display_path:match("(.-)|")
                 main_path = url_decode(main_path)
-
-                print("main_path: " .. tostring(main_path))
-
                 effective_path = normalize(main_path or display_path)
-                print("effective_path: " .. tostring(effective_path))
                 _, save_path, effective_path, protocol, is_remote, file_options = resolve(effective_path, save_path, effective_path, protocol, is_remote)
                 effective_path = normalize(effective_path)
                 display_path = effective_path
-                print("effective_path: " .. tostring(effective_path))
                 save_path = "archive://" .. (save_path or effective_path)
-                print("save_path: " .. tostring(save_path))
                 if main_path then
                     save_path = save_path .. display_path:match("|(.-)")
                 end
             else
-                print("REGEX PASS")
                 main_path = url_decode(main_path)
-
-                print("main_path: " .. tostring(main_path))
-                print("archive_path: " .. tostring(archive_path))
-                print("filename: " .. tostring(filename))
-
                 display_path, save_path, effective_path, protocol, is_remote, file_options = resolve(main_path, save_path, main_path, protocol, is_remote)
                 save_path = save_path or effective_path
                 save_path = "archive://" .. url_encode_archive(save_path) .. archive_path .. filename
                 _, main_path = mp.utils.split_path(main_path)
                 _, filename = mp.utils.split_path(filename)
                 display_path = main_path .. ": " .. filename
-                print("test display: " .. tostring(display_path))
             end
         elseif protocol == "slice" then
             if effective_path then
@@ -801,12 +786,6 @@ function path_info(full_path)
     if is_remote and not file_options and effective_protocol ~= "archive" then
         display_path = url_decode(display_path)
     end
-
-    print("FINAL")
-    print("display_path: " .. tostring(display_path))
-    print("save_path: " .. tostring(save_path))
-    print("effective_path: " .. tostring(effective_path))
-    print("effective_protocol: " .. tostring(effective_protocol))
 
     return display_path, save_path, effective_path, effective_protocol, is_remote, file_options
 end
@@ -1097,7 +1076,7 @@ function show_history(entries, next_page, prev_page, update, return_items)
                 if not dirname then
                     dirname, basename = mp.utils.split_path(effective_display_path)
                 end
-                if effective_protocol == "archive" then
+                if effective_protocol == "archive" and not options.display_archive_name then
                     basename = effective_display_path
                 end
                 title = basename ~= "" and basename or display_path
@@ -1507,16 +1486,3 @@ end)
 
 mp.register_event("file-loaded", file_load)
 mp.register_idle(idle)
-
-mp.add_key_binding("Alt+t", "memo-search", function()
-    print("1")
-    path_info([[archive://C:\Users\Andrei Vernon\Documents\Manga\Vagabond\Vagabond v01 (2008) (VIZBIG) (Scan) (HQ) (Colored Council).cbz|/Vagabond v01 (2008) (VIZBIG) (Scan) (HQ) (Colored Council)/Vagabond - c001 (v01) - p026 [VIZBIG] [Scan] [HQ] [Colored Council].png]])
-    print("2")
-    path_info([[archive://archive://C:\Users\Andrei Vernon\Documents\Manga\Chainsaw Man\test\test.zip%7C/Chainsaw Man 134 (2023) (Digital) (1r0n).cbz|/14.jpg]])
-    print("3")
-    path_info([[archive://archive://archive://archive://archive://C:\Users\Andrei Vernon\Documents\Manga\Chainsaw Man\test\test-nested_2_2.zip%2525257C/test-nested_2.zip%25257C/test-nested.zip%257C/interior.zip%7C/Chainsaw Man 136 (2023) (Digital) (1r0n).cbz|/00.jpg]])
-    print("4")
-    path_info([[archive://archive://C:\Users\Andrei Vernon\Documents\Manga\Chainsaw Man\test\test.zip%7C/Chainsaw Man 134 (2023) (Digital) (1r0n).cbz|/]])
-    print("5")
-    path_info([[archive://archive://archive://archive://archive://C:\Users\Andrei Vernon\Documents\Manga\Chainsaw Man\test\test-nested_2_2.zip%2525257C/test-nested_2.zip%25257C/test-nested.zip%257C/interior.zip%7C/Chainsaw Man 136 (2023) (Digital) (1r0n).cbz|/]])
-end)
